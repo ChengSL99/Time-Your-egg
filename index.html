@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Egg Timer Ultimate - Pixel Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --bg-yellow: #FDF2B0;
+            --border-orange: #F9C34D;
+            --text-brown: #5C4033;
+            --btn-pink: #FFD1BA;
+            --pixel-black: #000000;
+            --close-red: #FF9494;
+        }
+
+        * { box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+
+        body {
+            background-color: #f7e1a1;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; margin: 0; font-family: 'VT323', monospace;
+            overflow: hidden; image-rendering: pixelated;
+        }
+
+        .clouds {
+            position: absolute; top: 0; left: 0; width: 200%; height: 100%;
+            background: url('https://www.transparenttextures.com/patterns/clouds.png');
+            opacity: 0.2; z-index: -1; animation: moveClouds 60s linear infinite;
+        }
+        @keyframes moveClouds { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* Window Container */
+        #main-window {
+            background-color: var(--bg-yellow);
+            border: 6px solid var(--pixel-black);
+            width: 520px; box-shadow: 12px 12px 0px rgba(0,0,0,0.15);
+            position: absolute; z-index: 10;
+            transition: transform 0.5s cubic-bezier(0.18, 0.89, 0.32, 1.28), opacity 0.3s ease;
+        }
+
+        #main-window.hidden { transform: scale(0.5) translateY(-200px); opacity: 0; pointer-events: none; }
+        #main-window.minimized { transform: scale(0.2) translate(1000px, 800px); opacity: 0.8; cursor: pointer; }
+
+        .title-bar {
+            background-color: var(--border-orange);
+            padding: 4px 8px; display: flex; justify-content: space-between;
+            align-items: center; color: var(--text-brown); font-size: 24px;
+            border-bottom: 5px solid var(--pixel-black); cursor: grab;
+        }
+
+        .win-controls { display: flex; gap: 6px; }
+        .win-btn {
+            width: 28px; height: 28px; border: 3px solid var(--pixel-black);
+            display: flex; align-items: center; justify-content: center; 
+            cursor: pointer; font-weight: bold; font-size: 18px; background: white;
+        }
+
+        /* CUSTOM DIALOG BOX (English) */
+        #dialog-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.4); display: none;
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .dialog-box {
+            background: var(--bg-yellow); border: 6px solid var(--pixel-black);
+            width: 380px; padding: 25px; text-align: center;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.2);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popIn { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .dialog-btns { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+        .btn-diag { padding: 8px 25px; border: 4px solid var(--pixel-black); font-family: 'VT323'; font-size: 24px; cursor: pointer; box-shadow: 4px 4px 0px var(--pixel-black); }
+        .btn-diag:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px; }
+        .btn-yes { background: var(--close-red); color: white; }
+        .btn-no { background: white; }
+
+        /* Reopen Button */
+        #btn-reopen { display: none; background: var(--btn-pink); border: 4px solid var(--pixel-black); padding: 15px 30px; font-family: 'VT323'; font-size: 30px; cursor: pointer; box-shadow: 6px 6px 0px var(--pixel-black); z-index: 5; }
+
+        /* Content UI */
+        .content { padding: 30px; text-align: center; min-height: 520px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .egg-grid { display: flex; justify-content: center; gap: 10px; margin: 25px 0; }
+        .egg-card { background: #FFF; border: 3px solid var(--pixel-black); padding: 12px 5px; width: 85px; cursor: pointer; transition: 0.1s; }
+        .egg-card:hover { transform: translateY(-8px); background: var(--btn-pink); }
+        .egg-shape { width: 48px; height: 58px; background: white; border: 3px solid var(--pixel-black); border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; }
+        .yolk { border-radius: 50%; width: 28px; height: 28px; border: 3px solid var(--pixel-black); position: relative; }
+        .y2 { background: #FF4500; } .y4 { background: #FF8C00; } .y6 { background: #FFA500; } .y8 { background: #FFD700; } .y10 { background: #FFFF00; }
+        .egg-big { width: 130px; height: 160px; background: white; border: 5px solid var(--pixel-black); border-radius: 50% 50% 50% 50% / 65% 65% 35% 35%; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; animation: bounce 1s infinite alternate ease-in-out; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-15px); } }
+        #display { font-size: 110px; margin: 10px 0; font-weight: bold; }
+        .btn-pixel { background: var(--btn-pink); border: 4px solid var(--pixel-black); padding: 10px 45px; cursor: pointer; font-size: 35px; font-family: 'VT323'; box-shadow: 6px 6px 0px var(--pixel-black); }
+        .shake { animation: shakeEffect 0.2s infinite; color: red !important; }
+        @keyframes shakeEffect { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+    </style>
+</head>
+<body>
+
+    <div class="clouds"></div>
+    <button id="btn-reopen" onclick="reopenWindow()">Open Egg Timer 🍳</button>
+
+    <div id="dialog-overlay">
+        <div class="dialog-box">
+            <div style="font-size: 42px; margin-bottom: 5px;">Exit App?</div>
+            <div style="font-size: 24px; color: var(--text-brown);">Are you sure you want to close?</div>
+            <div class="dialog-btns">
+                <button class="btn-diag btn-yes" onclick="processClose(true)">YES</button>
+                <button class="btn-diag btn-no" onclick="processClose(false)">NO</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-window" onclick="restoreWindow()">
+        <div id="window-header" class="title-bar">
+            <span>Egg Timer <3</span>
+            <div class="win-controls">
+                <div class="win-btn" onclick="toggleMinimize(event)">_</div>
+                <div class="win-btn" style="background: var(--close-red);" onclick="openCustomDialog(event)">X</div>
+            </div>
+        </div>
+
+        <div id="scr-start" class="content">
+            <div class="egg-big"><div class="yolk y6" style="width: 60px; height: 60px;"></div></div>
+            <div style="font-size: 45px; margin-bottom: 20px;">Let's time your egg!</div>
+            <button class="btn-pixel" onclick="playClick(); nav('scr-select')">START</button>
+        </div>
+
+        <div id="scr-select" class="content" style="display:none;">
+            <div style="font-size: 35px; margin-bottom: 10px;">Choose Style</div>
+            <div class="egg-grid">
+                <div class="egg-card" onclick="playClick(); startTimer(120, 'y2', '2 Min')">
+                    <div class="egg-shape"><div class="yolk y2"></div></div><div>2 Min</div>
+                </div>
+                <div class="egg-card" onclick="playClick(); startTimer(240, 'y4', '4 Min')">
+                    <div class="egg-shape"><div class="yolk y4"></div></div><div>4 Min</div>
+                </div>
+                <div class="egg-card" onclick="playClick(); startTimer(360, 'y6', '6 Min')">
+                    <div class="egg-shape"><div class="yolk y6"></div></div><div>6 Min</div>
+                </div>
+                <div class="egg-card" onclick="playClick(); startTimer(480, 'y8', '8 Min')">
+                    <div class="egg-shape"><div class="yolk y8"></div></div><div>8 Min</div>
+                </div>
+                <div class="egg-card" onclick="playClick(); startTimer(600, 'y10', '10 Min')">
+                    <div class="egg-shape"><div class="yolk y10"></div></div><div>10 Min</div>
+                </div>
+            </div>
+            <button class="btn-pixel" style="font-size: 24px; padding: 5px 30px;" onclick="playClick(); nav('scr-start')">Back</button>
+        </div>
+
+        <div id="scr-timer" class="content" style="display:none;">
+            <p id="label" style="font-size: 32px; margin: 0;"></p>
+            <div class="egg-big"><div id="active-yolk" class="yolk"></div></div>
+            <div id="display">00:00</div>
+            <button class="btn-pixel" style="font-size: 28px;" onclick="playClick(); stopTimer()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        let interval;
+        const clickSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+        const swooshSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+        const alarmSound = new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg');
+
+        const win = document.getElementById("main-window");
+        const dialogOverlay = document.getElementById("dialog-overlay");
+        const reopenBtn = document.getElementById("btn-reopen");
+
+        function openCustomDialog(e) { e.stopPropagation(); playClick(); dialogOverlay.style.display = "flex"; }
+        function processClose(isYes) {
+            playClick(); dialogOverlay.style.display = "none";
+            if(isYes) { swooshSound.play(); win.classList.add("hidden"); setTimeout(() => { reopenBtn.style.display = "block"; }, 500); }
+        }
+        function reopenWindow() { playClick(); win.classList.remove("hidden"); reopenBtn.style.display = "none"; }
+        function toggleMinimize(e) { e.stopPropagation(); swooshSound.play(); win.classList.add("minimized"); }
+        function restoreWindow() { if (win.classList.contains("minimized")) { playClick(); win.classList.remove("minimized"); } }
+        function playClick() { clickSound.currentTime = 0; clickSound.play(); }
+        
+        function nav(id) { 
+            document.querySelectorAll('.content').forEach(s => s.style.display = 'none'); 
+            document.getElementById(id).style.display = 'flex'; 
+        }
+
+        function startTimer(sec, yolkClass, labelText) {
+            nav('scr-timer');
+            document.getElementById('label').innerText = labelText + " Cooking...";
+            const yolkDiv = document.getElementById('active-yolk');
+            const displayDiv = document.getElementById('display');
+            yolkDiv.className = "yolk " + yolkClass;
+            yolkDiv.style.width = "65px"; yolkDiv.style.height = "65px";
+            let timeLeft = sec;
+            updateDisplay(timeLeft);
+            clearInterval(interval);
+            interval = setInterval(() => {
+                timeLeft--; updateDisplay(timeLeft);
+                if(timeLeft <= 10 && timeLeft > 0) displayDiv.classList.add('shake');
+                if(timeLeft <= 0) { 
+                    clearInterval(interval); 
+                    displayDiv.classList.remove('shake'); 
+                    alarmSound.play(); 
+                    alert("Egg is Ready! 🍳✨"); 
+                    nav('scr-select'); 
+                }
+            }, 1000);
+        }
+
+        function stopTimer() { clearInterval(interval); nav('scr-select'); }
+        function updateDisplay(s) {
+            let m = Math.floor(s / 60); let sec = s % 60;
+            document.getElementById('display').innerText = `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        }
+
+        let header = document.getElementById("window-header");
+        header.onmousedown = function(e) {
+            if (win.classList.contains("minimized")) return;
+            let offset = { x: e.clientX - win.offsetLeft, y: e.clientY - win.offsetTop };
+            document.onmousemove = function(e) { win.style.left = (e.clientX - offset.x) + "px"; win.style.top = (e.clientY - offset.y) + "px"; };
+            document.onmouseup = function() { document.onmousemove = null; };
+        };
+    </script>
+</body>
+</html>
